@@ -1,4 +1,7 @@
-# Auto-generated resource acceptance-test cases for RecordRpzCnameIpaddress.
+# RecordRpzCnameIpaddress — nios resource test cases
+# TODO : must exist before running tests
+#   Default view:  zone_rp "tf-acc-rpz.com" in view "default"
+#   Custom view:   view "tf-acc-rpz-view" + zone_rp "tf-acc-rpz.com" in that view
 case "basic" {
   backend  = "nios"
   parallel = true
@@ -240,6 +243,33 @@ case "ttl" {
     }
     check = {
       "nios.ttl" = "0"
+    }
+  }
+
+  step {
+    nios {
+      name      = "11.0.0.10.tf-acc-rpz.com"
+      canonical = "11.0.0.10"
+      rp_zone   = "tf-acc-rpz.com"
+      view      = "default"
+    }
+  }
+
+}
+
+case "view" {
+  backend  = "nios"
+  parallel = true
+
+  step {
+    nios {
+      name      = "11.0.0.12.tf-acc-rpz.com"
+      canonical = "11.0.0.12"
+      rp_zone   = "tf-acc-rpz.com"
+      view      = "tf-acc-rpz-view"
+    }
+    check = {
+      "nios.view" = "tf-acc-rpz-view"
     }
   }
 
