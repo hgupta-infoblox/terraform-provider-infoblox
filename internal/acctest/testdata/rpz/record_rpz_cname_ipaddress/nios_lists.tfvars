@@ -1,4 +1,6 @@
 # RecordRpzCnameIpaddress — nios list cases
+# TODO: The following prerequisites MUST exist on the grid before running these tests:
+#   - RPZ zone : tf-acc-rpz.com        (view: default)
 case "basic" {
   backend        = "nios"
   min_tf_version = "1.14.0"

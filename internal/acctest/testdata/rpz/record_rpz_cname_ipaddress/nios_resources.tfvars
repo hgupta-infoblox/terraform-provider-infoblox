@@ -1,7 +1,8 @@
 # RecordRpzCnameIpaddress — nios resource test cases
-# TODO : must exist before running tests
-#   Default view:  zone_rp "tf-acc-rpz.com" in view "default"
-#   Custom view:   view "tf-acc-rpz-view" + zone_rp "tf-acc-rpz.com" in that view
+# TODO: The following prerequisites MUST exist on the grid before running these tests:
+#   - RPZ zone : tf-acc-rpz.com        (view: default)
+#   - RPZ zone : tf-acc-rpz.com        (view: tf-acc-rpz-view)
+#   - DNS view : tf-acc-rpz-view
 case "basic" {
   backend  = "nios"
   parallel = true
