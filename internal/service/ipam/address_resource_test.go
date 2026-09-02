@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-testing/helper/resource"
@@ -25,7 +26,7 @@ func TestAccAddressResource(t *testing.T) {
 
 	for _, backend := range []string{"uddi"} {
 		t.Run(backend, func(t *testing.T) {
-			acctest.RunResourceCases(t, resourceType, "ipam/address/"+backend+"_resources.tfvars", checksByBackend)
+			acctest.RunResourceCases(t, resourceType, "ipam/address/"+backend+"_resources.hcl", checksByBackend)
 		})
 	}
 }
@@ -52,8 +53,9 @@ func testAccCheckAddressExistsUDDI(resourceName string) resource.TestCheckFunc {
 
 func testAccCheckAddressDestroyUDDI(resourceType string) resource.TestCheckFunc {
 	return func(s *terraform.State) error {
-		for _, rs := range s.RootModule().Resources {
-			if rs.Type != resourceType {
+		for name, rs := range s.RootModule().Resources {
+			// Skipping data source entries as this is already checked in the resource destroy call.
+			if rs.Type != resourceType || strings.HasPrefix(name, "data.") {
 				continue
 			}
 			_, httpRes, err := acctest.UDDIClient.IPAddressManagementAPI.AddressAPI.Read(context.Background(), rs.Primary.ID).Execute()

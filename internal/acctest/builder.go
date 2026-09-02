@@ -6,7 +6,7 @@ import (
 )
 
 // BuildResourceHCL generates HCL config string for a resource.
-func BuildResourceHCL(resourceType, resourceLabel string, tv *Tfvars) string {
+func BuildResourceHCL(resourceType, resourceLabel string, tv *CaseConfig) string {
 	var sb strings.Builder
 
 	fmt.Fprintf(&sb, "resource %q %q {\n", resourceType, resourceLabel)
@@ -82,7 +82,7 @@ func formatHCLMap(m map[string]any) string {
 	}
 	var parts []string
 	for k, v := range m {
-		parts = append(parts, fmt.Sprintf("%s = %s", k, formatHCLValue(v)))
+		parts = append(parts, fmt.Sprintf("%q = %s", k, formatHCLValue(v)))
 	}
 	return "{\n    " + strings.Join(parts, "\n    ") + "\n  }"
 }
