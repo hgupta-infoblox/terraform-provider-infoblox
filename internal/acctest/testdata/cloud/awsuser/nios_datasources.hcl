@@ -1,4 +1,4 @@
-# Awsuser — nios datasource test cases
+# Auto-generated datasource acceptance-test cases for Awsuser.
 case "filters" {
   backend = "nios"
 
@@ -17,8 +17,6 @@ case "filters" {
       access_key_id    = "AKIA{{random2}}"
       account_id       = "337773173961"
       govcloud_enabled = false
-      # tostring() makes this a RawExpr so the framework skips the auto pair-check
-      # for secret_access_key (writeOnly — NIOS never echoes it back in GET responses).
       secret_access_key = tostring("S1JGWfwcZWEYhSkfpyhxigL9A/uaJ6mY")
     }
   }

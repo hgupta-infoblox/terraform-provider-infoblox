@@ -1,4 +1,8 @@
 # Auto-generated resource acceptance-test cases for Awsuser.
+# TODO: The following prerequisites MUST exist on the grid before running these tests:
+#   - NIOS admin user : aws1
+#   - NIOS admin user : aws2
+
 case "basic" {
   backend  = "nios"
   parallel = true
