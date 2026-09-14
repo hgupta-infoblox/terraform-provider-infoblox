@@ -9,7 +9,7 @@ case "filters" {
     }
   }
 
-  pair_checks = ["nios.auth_method", "nios.auth_type", "nios.disable", "nios.enable_certificate_authentication", "nios.name", "nios.time_zone", "nios.use_ssh_keys", "nios.use_time_zone"]
+  pair_checks = ["nios.auth_method", "nios.auth_type", "nios.disable", "nios.enable_certificate_authentication", "nios.name", "nios.time_zone"]
 
   step {
     nios {
@@ -31,7 +31,7 @@ case "ext_attr_filters" {
     }
   }
 
-  pair_checks = ["nios.auth_method", "nios.auth_type", "nios.comment", "nios.disable", "nios.enable_certificate_authentication", "nios.name", "nios.time_zone", "nios.use_ssh_keys", "nios.use_time_zone"]
+  pair_checks = ["nios.auth_method", "nios.auth_type", "nios.comment", "nios.disable", "nios.enable_certificate_authentication", "nios.name", "nios.time_zone"]
 
   step {
     nios {
