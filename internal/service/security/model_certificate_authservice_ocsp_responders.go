@@ -6,6 +6,7 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	schema "github.com/hashicorp/terraform-plugin-framework/resource/schema"
+	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringdefault"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
@@ -54,7 +55,9 @@ var CertificateAuthserviceOcspRespondersResourceSchemaAttributes = map[string]sc
 		MarkdownDescription: "The port used for connecting.",
 	},
 	"comment": schema.StringAttribute{
+		Default:  stringdefault.StaticString(""),
 		Optional: true,
+		Computed: true,
 		Validators: []validator.String{
 			customvalidator.StringNotEmpty(),
 			customvalidator.ValidateTrimmedString(),
@@ -63,6 +66,7 @@ var CertificateAuthserviceOcspRespondersResourceSchemaAttributes = map[string]sc
 	},
 	"disabled": schema.BoolAttribute{
 		Optional:            true,
+		Computed:            true,
 		MarkdownDescription: "Determines if this OCSP authentication responder is disabled.",
 	},
 	"certificate": schema.StringAttribute{
@@ -73,7 +77,8 @@ var CertificateAuthserviceOcspRespondersResourceSchemaAttributes = map[string]sc
 		MarkdownDescription: "",
 	},
 	"certificate_token": schema.StringAttribute{
-		Optional: true,
+		WriteOnly: true,
+		Optional:  true,
 		Validators: []validator.String{
 			customvalidator.StringNotEmpty(),
 		},

@@ -177,7 +177,8 @@ var CertificateAuthserviceResourceNiosSchemaAttributes = map[string]schema.Attri
 		MarkdownDescription: "The period of time the appliance waits before it attempts to contact a responder that is out of service again. The value must be between 1 and 600 seconds.",
 	},
 	"remote_lookup_password": schema.StringAttribute{
-		Optional: true,
+		WriteOnly: true,
+		Optional:  true,
 		Validators: []validator.String{
 			customvalidator.StringNotEmpty(),
 		},

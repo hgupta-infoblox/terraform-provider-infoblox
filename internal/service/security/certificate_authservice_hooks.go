@@ -68,22 +68,16 @@ func validateCertificateAuthserviceNIOSConfig(ctx context.Context, m *NIOSCertif
 	}
 }
 
-// PostFlattenCertificateAuthserviceNIOS preserves write-only and oneOf fields from plan to state.
+// PostFlattenCertificateAuthserviceNIOS preserves the oneOf field from plan to state.
 // remote_lookup_service is a oneOf SDK union type that codegen cannot round-trip; skip_expand/
-// skip_flatten remove the broken generated lines.
-// remote_lookup_password is write-only: NIOS never echoes it back in GET responses.
-// Both fields must be copied from the planned model to avoid perpetual diffs. When the planned
-// value is unknown (Optional+Computed and user did not set it), resolve to null so that Terraform
+// skip_flatten remove the broken generated lines, so we copy the planned value here.
+// When the planned value is unknown (user did not set it), resolve to null so Terraform
 // receives a known value after apply.
+// remote_lookup_password is WriteOnly in the schema — Terraform stores null for it; no copy needed.
 func PostFlattenCertificateAuthserviceNIOS(ctx context.Context, planned, flattened *NIOSCertificateAuthserviceModel, diags *diag.Diagnostics) {
 	if planned != nil && !planned.RemoteLookupService.IsUnknown() {
 		flattened.RemoteLookupService = planned.RemoteLookupService
 	} else {
 		flattened.RemoteLookupService = types.StringNull()
-	}
-	if planned != nil && !planned.RemoteLookupPassword.IsUnknown() {
-		flattened.RemoteLookupPassword = planned.RemoteLookupPassword
-	} else {
-		flattened.RemoteLookupPassword = types.StringNull()
 	}
 }
