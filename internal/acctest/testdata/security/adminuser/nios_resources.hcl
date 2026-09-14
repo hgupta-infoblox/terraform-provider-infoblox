@@ -153,7 +153,6 @@ case "auth_type" {
 
 }
 
-# Prerequisite: two CA certificates must exist on the grid (see top-of-file TODO).
 case "ca_certificate_issuer" {
   backend = "nios"
 
@@ -313,7 +312,6 @@ case "email" {
 
 }
 
-# Prerequisite: a CA certificate must exist on the grid (see top-of-file TODO).
 case "enable_certificate_authentication" {
   backend = "nios"
 
@@ -425,8 +423,6 @@ case "password" {
 
 }
 
-# ssh_keys are not persisted by NIOS on CREATE (POST). Step 1 creates without ssh_keys;
-# step 2 adds them via UPDATE (PUT) which NIOS does persist.
 case "ssh_keys" {
   backend  = "nios"
   parallel = true
