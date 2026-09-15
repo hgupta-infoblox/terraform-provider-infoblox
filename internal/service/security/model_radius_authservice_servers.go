@@ -90,7 +90,8 @@ var RadiusAuthserviceServersResourceSchemaAttributes = map[string]schema.Attribu
 		MarkdownDescription: "The FQDN or the IP address of the RADIUS server that is used for authentication.",
 	},
 	"shared_secret": schema.StringAttribute{
-		Required: true,
+		Sensitive: true,
+		Required:  true,
 		Validators: []validator.String{
 			customvalidator.StringNotEmpty(),
 		},
