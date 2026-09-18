@@ -32,6 +32,7 @@ import (
 	"github.com/infobloxopen/terraform-provider-infoblox/internal/service/misc"
 	"github.com/infobloxopen/terraform-provider-infoblox/internal/service/notification"
 	"github.com/infobloxopen/terraform-provider-infoblox/internal/service/rpz"
+	"github.com/infobloxopen/terraform-provider-infoblox/internal/service/smartfolder"
 	uddiclient "github.com/infobloxopen/universal-ddi-go-client/client"
 	uddioption "github.com/infobloxopen/universal-ddi-go-client/option"
 )
@@ -332,6 +333,7 @@ func ensureNIOSPreRequisites(
 
 func (p *InfobloxProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
+		smartfolder.NewSmartfolderPersonalResource,
 		notification.NewNotificationRestEndpointResource,
 
 		acl.NewNamedaclResource,
@@ -430,6 +432,7 @@ func (p *InfobloxProvider) Resources(_ context.Context) []func() resource.Resour
 
 func (p *InfobloxProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
+		smartfolder.NewSmartfolderPersonalDataSource,
 		notification.NewNotificationRestEndpointDataSource,
 
 		acl.NewNamedaclDataSource,
@@ -530,6 +533,7 @@ func (p *InfobloxProvider) DataSources(ctx context.Context) []func() datasource.
 
 func (p *InfobloxProvider) ListResources(_ context.Context) []func() list.ListResource {
 	return []func() list.ListResource{
+		smartfolder.NewSmartfolderPersonalList,
 		notification.NewNotificationRestEndpointList,
 
 		acl.NewNamedaclList,
