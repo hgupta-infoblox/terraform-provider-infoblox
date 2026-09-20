@@ -3,16 +3,70 @@ package ipam
 import (
 	"context"
 
+	"github.com/hashicorp/terraform-plugin-framework/attr"
 	"github.com/hashicorp/terraform-plugin-framework/diag"
 	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
+	"github.com/hashicorp/terraform-plugin-go/tftypes"
 	niosipam "github.com/infobloxopen/infoblox-nios-go-client/ipam"
+	"github.com/infobloxopen/terraform-provider-infoblox/internal/core"
 	"github.com/infobloxopen/terraform-provider-infoblox/internal/dynamicallocation"
 	"github.com/infobloxopen/terraform-provider-infoblox/internal/flex"
 	"github.com/infobloxopen/terraform-provider-infoblox/internal/utils"
+	ibvalidator "github.com/infobloxopen/terraform-provider-infoblox/internal/validator"
 )
+
+type networkcontainerBackendValidator struct {
+	backend core.BackendType
+}
+
+func (v networkcontainerBackendValidator) Description(_ context.Context) string {
+	return "Validates that the correct backend block (nios or uddi) is present for the configured backend."
+}
+
+func (v networkcontainerBackendValidator) MarkdownDescription(_ context.Context) string {
+	return "Validates that the correct backend block (`nios` or `uddi`) is present for the configured backend."
+}
+
+func (v networkcontainerBackendValidator) ValidateResource(ctx context.Context, req resource.ValidateConfigRequest, resp *resource.ValidateConfigResponse) {
+	var data NetworkcontainerModel
+	if !req.Config.Get(ctx, &data).HasError() {
+		return
+	}
+	ok, niosBlock, uddiBlock := rawBlockNullness(req.Config.Raw)
+	if !ok {
+		return
+	}
+	ibvalidator.ValidateBackendBlocks(v.backend, niosBlock, uddiBlock, &resp.Diagnostics)
+}
+
+func rawBlockNullness(raw tftypes.Value) (ok bool, niosBlock, uddiBlock types.Object) {
+	readBlock := func(name string, attrTypes map[string]attr.Type) (types.Object, bool) {
+		result, err := raw.ApplyTerraform5AttributePathStep(tftypes.AttributeName(name))
+		if err != nil {
+			return types.ObjectNull(nil), false
+		}
+		val, cast := result.(tftypes.Value)
+		if !cast {
+			return types.ObjectNull(nil), false
+		}
+		if val.IsNull() {
+			return types.ObjectNull(attrTypes), true
+		}
+		return types.ObjectUnknown(attrTypes), true
+	}
+	niosObj, ok1 := readBlock("nios", NIOSNetworkcontainerAttrTypes)
+	uddiObj, ok2 := readBlock("uddi", UDDINetworkcontainerAttrTypes)
+	return ok1 && ok2, niosObj, uddiObj
+}
+
+func (r *NetworkcontainerResource) ConfigValidators(_ context.Context) []resource.ConfigValidator {
+	return []resource.ConfigValidator{
+		networkcontainerBackendValidator{backend: r.backend},
+	}
+}
 
 // ValidateNetworkcontainer validates the Networkcontainer configuration.
 func ValidateNetworkcontainer(ctx context.Context, data NetworkcontainerModel, resp *resource.ValidateConfigResponse) {
