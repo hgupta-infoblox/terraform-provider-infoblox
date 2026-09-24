@@ -20,6 +20,10 @@
 //
 // DNS Auth Zone:
 //   - example_zone_250 (UDDI_AUTH_ZONE_1_ID)
+//
+// IPAM IP Spaces:
+//   - tf_ip_space_1 (UDDI_IP_SPACE_ID_1)
+//   - tf_ip_space_2 (UDDI_IP_SPACE_ID_2)
 
 package main
 
@@ -396,6 +400,70 @@ func CreateAuthZone(ctx context.Context, client *uddiclient.APIClient) error {
 	return nil
 }
 
+// CreateIPSpaces creates two IPAM IP spaces and stores their IDs into
+// pipeline_uddi.env as UDDI_IP_SPACE_ID_1 and UDDI_IP_SPACE_ID_2.
+// If an IP space already exists, its existing ID is stored instead.
+func CreateIPSpaces(ctx context.Context, client *uddiclient.APIClient) error {
+	ipSpaces := []struct {
+		name  string
+		idVar string
+	}{
+		{name: "tf_ip_space_1", idVar: "UDDI_IP_SPACE_ID_1"},
+		{name: "tf_ip_space_2", idVar: "UDDI_IP_SPACE_ID_2"},
+	}
+
+	for _, is := range ipSpaces {
+		body := ipam.IPSpace{
+			Name: is.name,
+		}
+
+		resp, _, err := client.IPAddressManagementAPI.IpSpaceAPI.Create(ctx).Body(body).Execute()
+		if err != nil {
+			if strings.Contains(err.Error(), "is already an existing") || strings.Contains(err.Error(), "conflict") || strings.Contains(err.Error(), "already exists") {
+				listResp, _, listErr := client.IPAddressManagementAPI.IpSpaceAPI.List(ctx).Execute()
+				if listErr != nil {
+					return fmt.Errorf("create IP spaces: list existing spaces to find %q: %w", is.name, listErr)
+				}
+
+				var existingID string
+				if listResp != nil {
+					for _, existing := range listResp.Results {
+						if existing.Name == is.name && existing.Id != nil {
+							existingID = *existing.Id
+							break
+						}
+					}
+				}
+
+				if existingID == "" {
+					return fmt.Errorf("create IP spaces: IP space %q already exists but ID could not be resolved", is.name)
+				}
+
+				if err := writePipelineEnvVar(is.idVar, existingID); err != nil {
+					return fmt.Errorf("create IP spaces: write %s for existing space: %w", is.idVar, err)
+				}
+
+				fmt.Printf("IP space %q already exists, using existing ID %q (env: %s)\n", is.name, existingID, is.idVar)
+				continue
+			}
+			return fmt.Errorf("create IP spaces: create %q: %w", is.name, err)
+		}
+
+		if resp == nil || resp.Result == nil || resp.Result.Id == nil {
+			return fmt.Errorf("create IP spaces: create response for %q missing ID", is.name)
+		}
+
+		createdID := *resp.Result.Id
+		if err := writePipelineEnvVar(is.idVar, createdID); err != nil {
+			return fmt.Errorf("create IP spaces: write %s: %w", is.idVar, err)
+		}
+
+		fmt.Printf("IP space %q created successfully (ID: %q, env: %s)\n", is.name, createdID, is.idVar)
+	}
+
+	return nil
+}
+
 func main() {
 	cspURL := strings.TrimSpace(os.Getenv("INFOBLOX_PORTAL_URL"))
 	apiKey := strings.TrimSpace(os.Getenv("INFOBLOX_PORTAL_KEY"))
@@ -461,4 +529,10 @@ func main() {
 		return
 	}
 	fmt.Println("Auth zone created successfully")
+
+	if err := CreateIPSpaces(ctx, client); err != nil {
+		fmt.Printf("Error creating IP spaces: %v\n", err)
+		return
+	}
+	fmt.Println("IP spaces created successfully")
 }
