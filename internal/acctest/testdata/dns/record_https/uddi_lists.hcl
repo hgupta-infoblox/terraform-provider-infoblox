@@ -24,6 +24,12 @@ case "basic" {
     provider         = infoblox
     include_resource = true
     limit            = 5
+    filter {
+      type = "filters"
+      values = {
+        zone = "uddi.zone"
+      }
+    }
   }
 
 }
