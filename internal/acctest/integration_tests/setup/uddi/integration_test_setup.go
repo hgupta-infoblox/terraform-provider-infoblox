@@ -24,6 +24,13 @@
 // IPAM IP Spaces:
 //   - tf_ip_space_1 (UDDI_IP_SPACE_ID_1)
 //   - tf_ip_space_2 (UDDI_IP_SPACE_ID_2)
+//
+// DNS Auth NSGs:
+//   - tf_test_auth_nsg_1 (UDDI_AUTH_NSG_ID_1)
+//   - tf_test_auth_nsg_2 (UDDI_AUTH_NSG_ID_2)
+//
+// DNS Views:
+//   - tf_test_view_1 (UDDI_VIEW_ID_1)
 
 package main
 
@@ -364,7 +371,7 @@ func CreateAuthZone(ctx context.Context, client *uddiclient.APIClient) error {
 				var existingID string
 				if listResp != nil {
 					for _, existing := range listResp.Results {
-						if existing.Fqdn != nil && *existing.Fqdn == az.fqdn && existing.Id != nil {
+						if existing.Fqdn != nil && strings.TrimSuffix(*existing.Fqdn, ".") == az.fqdn && existing.Id != nil {
 							existingID = *existing.Id
 							break
 						}
@@ -464,6 +471,120 @@ func CreateIPSpaces(ctx context.Context, client *uddiclient.APIClient) error {
 	return nil
 }
 
+// CreateAuthNSGs creates two DNS auth NSGs and stores their IDs into
+// pipeline_uddi.env as UDDI_AUTH_NSG_ID_1 and UDDI_AUTH_NSG_ID_2.
+// If an NSG already exists, its existing ID is stored instead.
+func CreateAuthNSGs(ctx context.Context, client *uddiclient.APIClient) error {
+	authNSGs := []struct {
+		name  string
+		idVar string
+	}{
+		{name: "tf_test_auth_nsg_1", idVar: "UDDI_AUTH_NSG_ID_1"},
+		{name: "tf_test_auth_nsg_2", idVar: "UDDI_AUTH_NSG_ID_2"},
+	}
+
+	for _, nsg := range authNSGs {
+		body := dnsconfig.AuthNSG{Name: nsg.name}
+		resp, _, err := client.DNSConfigurationAPI.AuthNsgAPI.Create(ctx).Body(body).Execute()
+		if err != nil {
+			if strings.Contains(err.Error(), "is already an existing") || strings.Contains(err.Error(), "conflict") || strings.Contains(err.Error(), "already exists") {
+				listResp, _, listErr := client.DNSConfigurationAPI.AuthNsgAPI.List(ctx).Execute()
+				if listErr != nil {
+					return fmt.Errorf("create auth NSGs: list existing NSGs to find %q: %w", nsg.name, listErr)
+				}
+
+				var existingID string
+				if listResp != nil {
+					for _, existing := range listResp.Results {
+						if existing.Name == nsg.name && existing.Id != nil {
+							existingID = *existing.Id
+							break
+						}
+					}
+				}
+
+				if existingID == "" {
+					return fmt.Errorf("create auth NSGs: NSG %q already exists but ID could not be resolved", nsg.name)
+				}
+
+				if err := writePipelineEnvVar(nsg.idVar, existingID); err != nil {
+					return fmt.Errorf("create auth NSGs: write %s for existing NSG: %w", nsg.idVar, err)
+				}
+
+				fmt.Printf("Auth NSG %q already exists, using existing ID %q (env: %s)\n", nsg.name, existingID, nsg.idVar)
+				continue
+			}
+			return fmt.Errorf("create auth NSGs: create %q: %w", nsg.name, err)
+		}
+
+		if resp == nil || resp.Result == nil || resp.Result.Id == nil {
+			return fmt.Errorf("create auth NSGs: create response for %q missing ID", nsg.name)
+		}
+
+		createdID := *resp.Result.Id
+		if err := writePipelineEnvVar(nsg.idVar, createdID); err != nil {
+			return fmt.Errorf("create auth NSGs: write %s: %w", nsg.idVar, err)
+		}
+
+		fmt.Printf("Auth NSG %q created successfully (ID: %q, env: %s)\n", nsg.name, createdID, nsg.idVar)
+	}
+
+	return nil
+}
+
+// CreateView creates a DNS view and stores its ID into
+// pipeline_uddi.env as UDDI_VIEW_ID_1.
+// If the view already exists, its existing ID is stored instead.
+func CreateView(ctx context.Context, client *uddiclient.APIClient) error {
+	const viewName = "tf_test_view_1"
+	const viewIDVar = "UDDI_VIEW_ID_1"
+
+	body := dnsconfig.View{Name: viewName}
+	resp, _, err := client.DNSConfigurationAPI.ViewAPI.Create(ctx).Body(body).Execute()
+	if err != nil {
+		if strings.Contains(err.Error(), "is already an existing") || strings.Contains(err.Error(), "conflict") || strings.Contains(err.Error(), "already exists") {
+			listResp, _, listErr := client.DNSConfigurationAPI.ViewAPI.List(ctx).Execute()
+			if listErr != nil {
+				return fmt.Errorf("create view: list existing views to find %q: %w", viewName, listErr)
+			}
+
+			var existingID string
+			if listResp != nil {
+				for _, existing := range listResp.Results {
+					if existing.Name == viewName && existing.Id != nil {
+						existingID = *existing.Id
+						break
+					}
+				}
+			}
+
+			if existingID == "" {
+				return fmt.Errorf("create view: view %q already exists but ID could not be resolved", viewName)
+			}
+
+			if err := writePipelineEnvVar(viewIDVar, existingID); err != nil {
+				return fmt.Errorf("create view: write %s for existing view: %w", viewIDVar, err)
+			}
+
+			fmt.Printf("View %q already exists, using existing ID %q (env: %s)\n", viewName, existingID, viewIDVar)
+			return nil
+		}
+		return fmt.Errorf("create view: create %q: %w", viewName, err)
+	}
+
+	if resp == nil || resp.Result == nil || resp.Result.Id == nil {
+		return fmt.Errorf("create view: create response for %q missing ID", viewName)
+	}
+
+	createdID := *resp.Result.Id
+	if err := writePipelineEnvVar(viewIDVar, createdID); err != nil {
+		return fmt.Errorf("create view: write %s: %w", viewIDVar, err)
+	}
+
+	fmt.Printf("View %q created successfully (ID: %q, env: %s)\n", viewName, createdID, viewIDVar)
+	return nil
+}
+
 func main() {
 	cspURL := strings.TrimSpace(os.Getenv("INFOBLOX_PORTAL_URL"))
 	apiKey := strings.TrimSpace(os.Getenv("INFOBLOX_PORTAL_KEY"))
@@ -535,4 +656,16 @@ func main() {
 		return
 	}
 	fmt.Println("IP spaces created successfully")
+
+	if err := CreateAuthNSGs(ctx, client); err != nil {
+		fmt.Printf("Error creating auth NSGs: %v\n", err)
+		return
+	}
+	fmt.Println("Auth NSGs created successfully")
+
+	if err := CreateView(ctx, client); err != nil {
+		fmt.Printf("Error creating view: %v\n", err)
+		return
+	}
+	fmt.Println("View created successfully")
 }

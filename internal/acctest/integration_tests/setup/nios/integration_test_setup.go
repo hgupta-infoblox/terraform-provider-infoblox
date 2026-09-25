@@ -1466,6 +1466,7 @@ func PreConfig(clients PreConfigClients, hostnames GridHostnames) error {
 		networkView string
 	}{
 		{address: "10.10.10.10", dnsView: microsoft.PtrString("default"), networkView: "default"},
+		{address: "10.10.10.11", dnsView: microsoft.PtrString("default"), networkView: "default"},
 		{address: "example_server", dnsView: microsoft.PtrString("default"), networkView: "default"},
 		{address: "ms_example_server", dnsView: nil, networkView: "ms_server"},
 		{address: "ms_example_server2", dnsView: nil, networkView: "ms_server2"},
