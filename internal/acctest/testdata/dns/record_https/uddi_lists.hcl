@@ -24,12 +24,6 @@ case "basic" {
     provider         = infoblox
     include_resource = true
     limit            = 5
-    filter {
-      type = "filters"
-      values = {
-        target_name = "uddi.rdata.target_name"
-      }
-    }
   }
 
 }
