@@ -549,7 +549,6 @@ case "inheritance_sources" {
 case "ip_space" {
   backend  = "uddi"
   parallel = true
-  skip     = true
   prerequisites_hcl = <<-PREREQ
   resource "infoblox_network_view" "one" {
     uddi = {
