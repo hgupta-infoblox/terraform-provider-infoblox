@@ -250,10 +250,22 @@ func CreateAnyCastService(ctx context.Context, client *uddiclient.APIClient, hos
 	return nil
 }
 
-// StoreDNSHostIDs lists DNS Host objects and stores the IDs of the first two
-// into pipeline_uddi.env as UDDI_DNS_HOST_ID_1 and UDDI_DNS_HOST_ID_2.
-func StoreDNSHostIDs(ctx context.Context, client *uddiclient.APIClient) error {
-	resp, _, err := client.DNSConfigurationAPI.HostAPI.List(ctx).Tfilter(`"used_for"=="Terraform Provider Acceptance Tests"`).Execute()
+// StoreDNSHostIDs lists DNS Host objects whose name matches one of the given
+// infra host display names and stores the IDs of the first two into
+// pipeline_uddi.env as UDDI_DNS_HOST_ID_1 and UDDI_DNS_HOST_ID_2.
+func StoreDNSHostIDs(ctx context.Context, client *uddiclient.APIClient, displayNames []string) error {
+	if len(displayNames) == 0 {
+		fmt.Println("No infra host display names provided, skipping DNS host ID storage")
+		return nil
+	}
+
+	filterParts := make([]string, 0, len(displayNames))
+	for _, name := range displayNames {
+		filterParts = append(filterParts, fmt.Sprintf(`name=="%s"`, name))
+	}
+	filter := strings.Join(filterParts, " or ")
+
+	resp, _, err := client.DNSConfigurationAPI.HostAPI.List(ctx).Filter(filter).Execute()
 	if err != nil {
 		return fmt.Errorf("store DNS host IDs: list DNS hosts: %w", err)
 	}
@@ -925,7 +937,7 @@ func main() {
 	}
 
 	pipelineEnvPath := filepath.Join(cwd, "pipeline_uddi.env")
-	f, err := os.OpenFile(pipelineEnvPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	f, err := os.OpenFile(pipelineEnvPath, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		fmt.Printf("Error opening pipeline_uddi.env: %v\n", err)
 		return
@@ -959,7 +971,14 @@ func main() {
 		fmt.Println("Anycast service created successfully")
 	}
 
-	if err := StoreDNSHostIDs(ctx, client); err != nil {
+	var infraHostDisplayNames []string
+	for _, host := range infraHosts {
+		if n := host.GetDisplayName(); n != "" {
+			infraHostDisplayNames = append(infraHostDisplayNames, n)
+		}
+	}
+
+	if err := StoreDNSHostIDs(ctx, client, infraHostDisplayNames); err != nil {
 		fmt.Printf("Error storing DNS host IDs: %v\n", err)
 		return
 	}
